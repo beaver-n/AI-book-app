@@ -89,4 +89,101 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// Story queries - import types and tables
+import type { InsertStory } from "../drizzle/schema";
+import { stories, storyShares } from "../drizzle/schema";
+
+export async function getUserStories(userId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get stories: database not available");
+    return [];
+  }
+
+  return await db
+    .select()
+    .from(stories)
+    .where(eq(stories.userId, userId))
+    .orderBy((t) => t.createdAt);
+}
+
+export async function getStoryById(storyId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get story: database not available");
+    return undefined;
+  }
+
+  const result = await db
+    .select()
+    .from(stories)
+    .where(eq(stories.id, storyId))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getStoryByShareToken(shareToken: string) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get story: database not available");
+    return undefined;
+  }
+
+  const result = await db
+    .select()
+    .from(stories)
+    .where(eq(stories.shareToken, shareToken))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function createStory(story: InsertStory) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot create story: database not available");
+    return undefined;
+  }
+
+  return await db.insert(stories).values(story);
+}
+
+export async function updateStory(storyId: number, updates: Partial<InsertStory>) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update story: database not available");
+    return undefined;
+  }
+
+  return await db
+    .update(stories)
+    .set(updates)
+    .where(eq(stories.id, storyId));
+}
+
+export async function deleteStory(storyId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot delete story: database not available");
+    return undefined;
+  }
+
+  return await db
+    .delete(stories)
+    .where(eq(stories.id, storyId));
+}
+
+export async function incrementStoryViewCount(storyId: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot increment view count: database not available");
+    return undefined;
+  }
+
+  const { sql } = await import("drizzle-orm");
+  return await db
+    .update(stories)
+    .set({ viewCount: sql`${stories.viewCount} + 1` })
+    .where(eq(stories.id, storyId));
+}

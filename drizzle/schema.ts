@@ -25,4 +25,36 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+/**
+ * Stories table for storing generated stories
+ */
+export const stories = mysqlTable("stories", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  coverImage: text("coverImage"), // S3 URL for cover image
+  prompt: text("prompt"), // Original prompt used to generate the story
+  isPublic: int("isPublic").default(0).notNull(), // 0 = private, 1 = public
+  shareToken: varchar("shareToken", { length: 64 }).unique(), // Unique token for sharing
+  viewCount: int("viewCount").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Story = typeof stories.$inferSelect;
+export type InsertStory = typeof stories.$inferInsert;
+
+/**
+ * Story shares table for tracking shared stories
+ */
+export const storyShares = mysqlTable("storyShares", {
+  id: int("id").autoincrement().primaryKey(),
+  storyId: int("storyId").notNull().references(() => stories.id, { onDelete: "cascade" }),
+  shareToken: varchar("shareToken", { length: 64 }).notNull().unique(),
+  expiresAt: timestamp("expiresAt"), // Optional expiration
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type StoryShare = typeof storyShares.$inferSelect;
+export type InsertStoryShare = typeof storyShares.$inferInsert;
